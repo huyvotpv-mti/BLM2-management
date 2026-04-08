@@ -6,12 +6,34 @@ on:
         description: 'Message to send to Google Chat'
         required: false
         default: 'Hello world'
+      schedule_time:
+        description: 'Schedule time in Vietnam timezone (format: YYYY-MM-DD HH:MM, e.g., 2026-04-08 14:30)'
+        required: false
 
 jobs:
   send-message:
     runs-on: ubuntu-latest
     steps:
+      - name: Check if scheduled for future
+        id: check_schedule
+        run: |
+          SCHEDULE_TIME="${{ github.event.inputs.schedule_time }}"
+          if [ -z "$SCHEDULE_TIME" ]; then
+            echo "send_now=true" >> $GITHUB_OUTPUT
+          else
+            # Convert Vietnam time (ICT, UTC+7) to epoch
+            EPOCH=$(date -d "$SCHEDULE_TIME" +%s 2>/dev/null || echo "0")
+            NOW=$(date +%s)
+            if [ $EPOCH -le $NOW ]; then
+              echo "send_now=true" >> $GITHUB_OUTPUT
+            else
+              echo "send_now=false" >> $GITHUB_OUTPUT
+              echo "scheduled_epoch=$EPOCH" >> $GITHUB_OUTPUT
+            fi
+          fi
+
       - name: Send message to Google Chat
+        if: steps.check_schedule.outputs.send_now == 'true'
         run: |
           curl -X POST \
             "https://chat.googleapis.com/v1/spaces/AAQAlFGfDCo/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=-bHTjIXRvhq6d9rn5HJyjsYdIangOWaTx7JwWl7KyBU" \
