@@ -1,0 +1,19 @@
+name: Send Google Chat Message
+on:
+  workflow_dispatch:
+    inputs:
+      message:
+        description: 'Message to send to Google Chat'
+        required: false
+        default: 'Hello world'
+
+jobs:
+  send-message:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send message to Google Chat
+        run: |
+          curl -X POST \
+            "https://chat.googleapis.com/v1/spaces/AAQAlFGfDCo/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=-bHTjIXRvhq6d9rn5HJyjsYdIangOWaTx7JwWl7KyBU" \
+            -H "Content-Type: application/json" \
+            -d '{"text":"${{ github.event.inputs.message }}"}'
